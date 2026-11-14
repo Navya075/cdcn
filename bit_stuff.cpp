@@ -1,18 +1,23 @@
-#include <stdio.h>
-#include <string.h>
 
-void bit_stuff_sender(const char *data, char *stuffed)
+#include <iostream>
+#include <string>
+using namespace std;
+
+void bitStuffSender(string data, string &stuffed)
 {
-    int j = 0, ones = 0;
-    for (int i = 0; data[i] != '\0'; i++)
+    int ones = 0;
+
+    for(int i = 0; i < data.length(); i++)
     {
-        stuffed[j++] = data[i];
-        if (data[i] == '1')
+        stuffed += data[i];
+
+        if(data[i] == '1')
         {
             ones++;
-            if (ones == 5)
+
+            if(ones == 5)
             {
-                stuffed[j++] = '0';
+                stuffed += '0';
                 ones = 0;
             }
         }
@@ -21,19 +26,21 @@ void bit_stuff_sender(const char *data, char *stuffed)
             ones = 0;
         }
     }
-    stuffed[j] = '\0';
 }
-void bit_stuff_receiver(const char *stuffed, char *original)
-{
-    int j = 0, ones = 0, i = 0;
-    while (stuffed[i] != '\0')
-    {
-        original[j++] = stuffed[i];
 
-        if (stuffed[i] == '1')
+void bitStuffReceiver(string stuffed, string &original)
+{
+    int ones = 0;
+
+    for(int i = 0; i < stuffed.length(); i++)
+    {
+        original += stuffed[i];
+
+        if(stuffed[i] == '1')
         {
             ones++;
-            if (ones == 5)
+
+            if(ones == 5)
             {
                 i++; // Skip stuffed 0
                 ones = 0;
@@ -43,57 +50,50 @@ void bit_stuff_receiver(const char *stuffed, char *original)
         {
             ones = 0;
         }
-
-        i++;
     }
-
-    original[j] = '\0';
 }
 
-void add_frame(char *frame, const char *data)
+void addFrame(string data, string &frame)
 {
-    const char *FLAG = "01111110";
-    char stuffed[256];
-    bit_stuff_sender(data, stuffed);
-    strcpy(frame, FLAG);
-    strcat(frame, stuffed);
-    strcat(frame, FLAG);
+    string FLAG = "01111110";
+    string stuffed = "";
+
+    bitStuffSender(data, stuffed);
+
+    frame = FLAG + stuffed + FLAG;
 }
-void remove_frame(const char *frame, char *data)
+
+void removeFrame(string frame, string &data)
 {
-    const char *FLAG = "01111110";
-    int flag_len = strlen(FLAG);
-    int frame_len = strlen(frame);
-    if (strncmp(frame, FLAG, flag_len) != 0 ||
-        strncmp(frame + frame_len - flag_len, FLAG, flag_len) != 0)
+    string FLAG = "01111110";
+
+    if(frame.length() < 16 ||
+       frame.substr(0, 8) != FLAG ||
+       frame.substr(frame.length() - 8) != FLAG)
     {
-        printf("Error: Invalid frame!\n");
+        cout << "Invalid Frame!";
         return;
     }
-    char temp[256];
-    strncpy(temp, frame + flag_len, frame_len - 2 * flag_len);
-    temp[frame_len - 2 * flag_len] = '\0';
-    bit_stuff_receiver(temp, data);
+
+    string stuffed = frame.substr(8, frame.length() - 16);
+
+    bitStuffReceiver(stuffed, data);
 }
+
 int main()
 {
-    char data[256], frame[512], received[256];
+    string data, frame, received = "";
 
-    printf("Enter data: ");
-    scanf("%255s", data);
+    cout << "Enter data: ";
+    cin >> data;
 
-    add_frame(frame, data);
+    addFrame(data, frame);
 
-    printf("Transmitted Frame: %s\n", frame);
+    cout << "\nTransmitted Frame: " << frame;
 
-    remove_frame(frame, received);
+    removeFrame(frame, received);
 
-    printf("Received Data: %s\n", received);
+    cout << "\nReceived Data: " << received;
 
     return 0;
-} 
-//Output
-
-//Enter data: 0111111011111
-//Transmitted Frame: 0111111001111101011111001111110
-//Received Data: 0111111011111
+}
